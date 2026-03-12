@@ -159,7 +159,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .exp-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .exp-meta{font-size:11px;color:var(--text-muted);margin-top:2px;}
 .exp-amount{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--accent2);flex-shrink:0;}
-.exp-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:4px;border-radius:5px;transition:all 0.15s;flex-shrink:0;}
+.exp-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:4px;border-radius:5px;transition:all 0.15s;flex-shrink:0;}.exp-del:hover{color:var(--danger);background:rgba(255,77,109,0.1);}.exp-edit{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:4px;border-radius:5px;transition:all 0.15s;flex-shrink:0;}.exp-edit:hover{color:var(--accent);background:var(--accent-dim);}
 .exp-del:hover{color:var(--danger);background:rgba(255,77,109,0.1);}
 .list-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .list-title{font-size:13px;font-weight:700;}
@@ -376,6 +376,19 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   </div>
 </div>
 
+
+<div class="overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-hdr"><span>✏️ Harcamayı Düzenle</span><button class="modal-close" onclick="closeEditModal()">✕</button></div>
+    <div class="inp-group"><label>Başlık</label><input type="text" id="ed-title" placeholder="Başlık" /></div>
+    <div class="inp-group"><label>Tutar (₺)</label><input type="number" id="ed-amount" placeholder="0.00" min="0" step="0.01" /></div>
+    <div class="inp-group"><label>Kategori</label><select id="ed-cat"><option value="market">🛒 Market</option><option value="online-market">📦 Online Market</option><option value="restoran">🍽️ Restoran / Kafe</option><option value="manti">🥟 Mantı</option><option value="online-yemek">🛵 Online Yemek</option><option value="alisveris">🛍️ Diğer Alışveriş</option><option value="online-alisveris">💻 Online Alışveriş</option><option value="sosyal">📱 Sosyal Platform</option><option value="masraf">🧾 Masraf</option><option value="taksit">💳 Taksit</option><option value="ulasim">🚗 Ulaşım</option><option value="fatura">⚡ Faturalar</option><option value="eglence">🎬 Eğlence</option><option value="saglik">💊 Sağlık</option><option value="giyim">👗 Giyim</option><option value="egitim">📚 Eğitim</option><option value="diger">📂 Diğer</option></select></div>
+    <div class="inp-group"><label>Tarih</label><input type="date" id="ed-date" /></div>
+    <div class="inp-group"><label>Not (isteğe bağlı)</label><textarea id="ed-note" placeholder="Ek detaylar..."></textarea></div>
+    <input type="hidden" id="ed-id" />
+    <button class="btn-save" onclick="updateExpense()">Güncelle</button>
+  </div>
+</div>
 <div class="overlay" id="budget-modal">
   <div class="modal">
     <div class="modal-hdr"><span>🎯 Aylık Hedef</span><button class="modal-close" onclick="closeBudgetModal()">✕</button></div>
@@ -557,6 +570,38 @@ window.deleteExpense=async function(id){
     expenses=expenses.filter(e=>e.id!==id);
     render();showAlert('Silindi','success');
   }catch(e){showAlert('Silinemedi','danger');}
+};
+
+// EDIT EXPENSE
+window.openEditModal=function(id){
+  const e=expenses.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById("ed-id").value=id;
+  document.getElementById("ed-title").value=e.title;
+  document.getElementById("ed-amount").value=e.amount;
+  document.getElementById("ed-cat").value=e.category||"diger";
+  document.getElementById("ed-date").value=e.date;
+  document.getElementById("ed-note").value=e.note||"";
+  document.getElementById("edit-modal").classList.add("open");
+};
+window.closeEditModal=()=>document.getElementById("edit-modal").classList.remove("open");
+window.updateExpense=async function(){
+  const id=document.getElementById("ed-id").value;
+  const title=document.getElementById("ed-title").value.trim();
+  const amount=parseFloat(document.getElementById("ed-amount").value);
+  const category=document.getElementById("ed-cat").value;
+  const date=document.getElementById("ed-date").value;
+  const note=document.getElementById("ed-note").value.trim();
+  if(!title){showAlert("Başlık giriniz","warning");return;}
+  if(!amount||amount<=0){showAlert("Geçerli bir tutar giriniz","warning");return;}
+  if(!date){showAlert("Tarih seçiniz","warning");return;}
+  try{
+    const {updateDoc}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    await updateDoc(doc(db,"users",currentUser.uid,"expenses",id),{title,amount,category,date,note});
+    const idx=expenses.findIndex(e=>e.id===id);
+    if(idx>-1) expenses[idx]={...expenses[idx],title,amount,category,date,note};
+    closeEditModal();render();showAlert("Harcama güncellendi","success");
+  }catch(e){showAlert("Güncellenemedi: "+e.message,"danger");}
 };
 
 // BUDGET
@@ -754,7 +799,7 @@ window.selectDay=function(ds){selectedDate=ds;currentView='daily';currentDate=pa
 
 function expHTML(e){
   const cat=CATS[e.category]||CATS.diger;
-  return `<div class="exp-item"><div class="exp-icon" style="background:${cat.color}20">${cat.icon}</div><div class="exp-info"><div class="exp-title">${e.title}</div><div class="exp-meta">${cat.label} · ${fmtDate(e.date)}${e.note?' · '+e.note:''}</div></div><div class="exp-amount">${fmtF(e.amount)}</div><button class="exp-del" onclick="deleteExpense('${e.id}')">✕</button></div>`;
+  return `<div class="exp-item"><div class="exp-icon" style="background:${cat.color}20">${cat.icon}</div><div class="exp-info"><div class="exp-title">${e.title}</div><div class="exp-meta">${cat.label} · ${fmtDate(e.date)}${e.note?' · '+e.note:''}</div></div><div class="exp-amount">${fmtF(e.amount)}</div><button class="exp-edit" onclick="openEditModal('${e.id}')">✏️</button><button class="exp-del" onclick="deleteExpense('${e.id}')">✕</button></div>`;
 }
 
 function fmtDate(ds){const d=parseDate(ds);return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
