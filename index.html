@@ -257,7 +257,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 <!-- ══════════ APP ══════════ -->
 <div id="app-screen">
   <nav class="top-nav">
-    <div class="nav-logo">₺ Harcamalarım <span id="nav-email"></span></div>
+    <div style="display:flex;align-items:center;gap:10px;"><button class="nav-btn" onclick="goHome()" title="Ana Sayfa">🏠</button><div class="nav-logo">₺ Harcamalarım <span id="nav-email"></span></div></div>
     <div class="nav-right">
       <button class="nav-btn primary" onclick="openExpModal()">+ Harcama</button>
       <button class="nav-btn" onclick="openBudgetModal()">🎯 Hedef</button>
@@ -354,11 +354,13 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
         <option value="market">🛒 Market</option>
         <option value="online-market">📦 Online Market</option>
         <option value="restoran">🍽️ Restoran / Kafe</option>
+        <option value="manti">🥟 Mantı</option>
         <option value="online-yemek">🛵 Online Yemek</option>
         <option value="alisveris">🛍️ Diğer Alışveriş</option>
         <option value="online-alisveris">💻 Online Alışveriş</option>
         <option value="sosyal">📱 Sosyal Platform</option>
         <option value="masraf">🧾 Masraf</option>
+        <option value="taksit">💳 Taksit</option>
         <option value="ulasim">🚗 Ulaşım</option>
         <option value="fatura">⚡ Faturalar</option>
         <option value="eglence">🎬 Eğlence</option>
@@ -430,11 +432,13 @@ const CATS={
   market:            {label:'Market',           icon:'🛒',color:'#64dfdf'},
   'online-market':   {label:'Online Market',    icon:'📦',color:'#00cec9'},
   restoran:          {label:'Restoran/Kafe',    icon:'🍽️',color:'#ff9f43'},
+  manti:             {label:'Mantı',            icon:'🥟',color:'#d4a373'},
   'online-yemek':    {label:'Online Yemek',     icon:'🛵',color:'#ff6b35'},
   alisveris:         {label:'Diğer Alışveriş',  icon:'🛍️',color:'#fd79a8'},
   'online-alisveris':{label:'Online Alışveriş', icon:'💻',color:'#e056fd'},
   sosyal:            {label:'Sosyal Platform',  icon:'📱',color:'#a29bfe'},
   masraf:            {label:'Masraf',           icon:'🧾',color:'#b8e994'},
+  taksit:            {label:'Taksit',           icon:'💳',color:'#fd9644'},
   ulasim:            {label:'Ulaşım',           icon:'🚗',color:'#74b9ff'},
   fatura:            {label:'Faturalar',        icon:'⚡',color:'#ffeaa7'},
   eglence:           {label:'Eğlence',          icon:'🎬',color:'#6c5ce7'},
@@ -765,7 +769,7 @@ function renderExpList(){
   document.getElementById('exp-list').innerHTML=exps.length?exps.map(expHTML).join(''):'<div class="empty-state"><div class="e-icon">📭</div><p>Bu dönemde harcama yok</p></div>';
 }
 
-function showAlert(msg,type='success'){
+window.goHome=function(){currentView='monthly';currentDate=new Date();selectedDate=null;document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));render();window.scrollTo({top:0,behavior:'smooth'});showAlert('Ana sayfaya dönüldü','success');};function showAlert(msg,type='success'){
   const el=document.createElement('div');
   el.className=`alert-msg alert-${type}`;
   el.innerHTML=`<span>${{success:'✓',warning:'⚠',danger:'🚨'}[type]||'!'}</span><span>${msg}</span>`;
